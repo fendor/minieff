@@ -19,21 +19,48 @@ maintainer:         power.walross@gmail.com
 -- category:
 extra-source-files: CHANGELOG.md
 
+common warnings
+  ghc-options: -Wall -Wredundant-constraints
+
+common exts
+  default-extensions:
+    NoMonomorphismRestriction
+    DataKinds
+    FlexibleContexts
+    GADTs
+    KindSignatures
+    LambdaCase
+    MultiParamTypeClasses
+    ScopedTypeVariables
+    TypeApplications
+    TypeOperators
+
 library
-    exposed-modules:  MyLib, Data.OpenUnion
+  import:           warnings, exts
+  exposed-modules:
+    Data.OpenUnion
+    Example
+    MiniEff
+    MiniEff.Coroutines
+    MiniEff.Internal
+    MiniEff.Reader
+    MiniEff.Writer
 
-    -- Modules included in this library but not exported.
-    -- other-modules:
+  -- Modules included in this library but not exported.
+  -- other-modules:
 
-    -- LANGUAGE extensions used by modules in this package.
-    -- other-extensions:
-    build-depends:    base ^>=4.14.3.0, free
-    hs-source-dirs:   src
-    default-language: Haskell2010
+  -- LANGUAGE extensions used by modules in this package.
+  -- other-extensions:
+  build-depends:
+    , base  ^>=4.14.3.0
+    , free
+
+  hs-source-dirs:   src
+  default-language: Haskell2010
 
 test-suite minieff-test
-    default-language: Haskell2010
-    type:             exitcode-stdio-1.0
-    hs-source-dirs:   test
-    main-is:          MyLibTest.hs
-    build-depends:    base ^>=4.14.3.0
+  default-language: Haskell2010
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   test
+  main-is:          MyLibTest.hs
+  build-depends:    base ^>=4.14.3.0

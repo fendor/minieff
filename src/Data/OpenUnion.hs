@@ -14,7 +14,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
-{-# OPTIONS_GHC -Wwarn #-}
 {-# OPTIONS_HADDOCK show-extensions #-}
 
 -- | Open unions (type-indexed co-products) for extensible effects
@@ -59,7 +58,7 @@ module Data.OpenUnion
     pattern U0,
     pattern U1,
     Member,
-    type (<::),
+    Members,
     weaken,
   )
 where
@@ -138,11 +137,11 @@ instance {-# INCOHERENT #-} (FindElem t r) => Member t r where
 --
 -- @
 -- (Member (Exc e) r, Member (State s) r) => ...
--- [ Exc e, State s ] <:: r => ...
+-- Members [ Exc e, State s ] r => ...
 -- @
-type family (<::) (ms :: [* -> *]) r where
-  (<::) '[] r = (() :: Constraint)
-  (<::) (m ': ms) r = (Member m r, (<::) ms r)
+type family Members (ms :: [* -> *]) r where
+  Members '[] r = (() :: Constraint)
+  Members (m ': ms) r = (Member m r, Members ms r)
 
 {-# INLINE [2] decomp #-}
 
