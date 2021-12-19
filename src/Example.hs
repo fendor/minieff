@@ -35,9 +35,9 @@ yieldWithoutLocal :: (Members [Reader Int, Writer String, Yield Int Int] effs) =
 yieldWithoutLocal = do
   x <- ask @Int
   tell $ "Ask is: " ++ show x
-  n <- ask @Int
-  tell $ "Ask in local: " ++ show n
   _ <- yield @Int @Int x show
+  n <- ask @Int
+  tell $ "Ask without local: " ++ show n
   ask
 
 runWithYield :: Members [Writer String, Reader Int] effs => Eff effs Int

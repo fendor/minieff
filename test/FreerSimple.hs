@@ -17,6 +17,24 @@ yieldWithLocal = do
     tell ["Ask in local: " ++ show n]
     _ <- yield @Int @Int x show
     ask
+  tmp <- ask @Int
+  tell ["Ask after local block: " ++ show tmp]
+  pure y
+
+yieldWithNestedLocal :: (Members [Reader Int, Writer [String]] effs) => Eff (Yield Int Int :effs) Int
+yieldWithNestedLocal = do
+  x <- ask @Int
+  tell ["Ask is: " ++ show x]
+  y <- local @Int (+ 15) $ do
+    n <- ask @Int
+    tell ["Ask in local: " ++ show n]
+    _ <- yield @Int @Int x show
+    local @Int (+ 15) $ do
+      nested <- ask @Int
+      tell ["Ask in nested local: " ++ show nested]
+    ask
+  tmp <- ask @Int
+  tell ["Ask after local block: " ++ show tmp]
   pure y
 
 yieldWithoutLocal :: (Members [Reader Int, Writer [String]] effs) => Eff (Yield Int Int : effs) Int
