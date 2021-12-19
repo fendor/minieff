@@ -107,3 +107,17 @@ interpose ret h (Impure u k) =
   case prj u of
     Just x -> h x (interpose ret h . k)
     Nothing -> Impure u (interpose ret h . k)
+
+raise :: Eff r a -> Eff (e ': r) a
+raise = loop
+  where
+    loop (Pure x) = pure x
+    loop (Impure u q) = Impure (weaken u) (loop . q)
+
+replace :: (a -> Eff (v : r) w) -> (forall x. t x -> (x -> Eff (v : r) w) -> Eff (v : r) w) -> Eff (t : r) a -> Eff (v : r) w
+replace pure' bind = loop
+  where
+    loop (Pure x) = pure' x
+    loop (Impure u' q) = case decomp u' of
+      Right x -> bind x (loop . q)
+      Left u -> Impure (weaken u) (loop . q)
