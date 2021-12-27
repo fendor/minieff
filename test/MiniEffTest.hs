@@ -1,4 +1,4 @@
-module Example where
+module MiniEffTest where
 
 import MiniEff
 
@@ -27,7 +27,7 @@ yieldWithLocal = do
   y <- local @Int (+ 15) $ do
     n <- ask @Int
     tell $ "Ask in local: " ++ show n
-    _ <- yield @Int @Int x show
+    _ <- yield @Int @Int x
     ask
   pure y
 
@@ -35,8 +35,10 @@ yieldWithoutLocal :: (Members [Reader Int, Writer String, Yield Int Int] effs) =
 yieldWithoutLocal = do
   x <- ask @Int
   tell $ "Ask is: " ++ show x
-  _ <- yield @Int @Int x show
+  _ <- yield @Int @Int x
+  -- asert: x1=x+1
   n <- ask @Int
+  -- unreachable
   tell $ "Ask without local: " ++ show n
   ask
 
@@ -52,13 +54,31 @@ runWithYield = do
         Continue _ _ -> error "Impossible 2"
   pure res
 
+-- runWithCBYield :: Members [Writer String, Reader Int] effs => Eff effs Int
+-- runWithCBYield = do
+--   status <- runLocalExit1 @Int (\a -> do
+--     case (a == 0) of
+--       False -> pure $ Left @Int 0
+--       True -> do
+--         tell ("Yielded: " ++ show a)
+--         pure $ Right $ a * 2
+--     ) yieldWithLocal
+--   status1 <- runLocalExit1 @Int ((\a -> pure $ Right $ a + 1) `firstHandlerOnceAndThenOtherHandler` (const $ pure $ Left (0 :: Int))) yieldWithLocal
+
+--   pure status
+
+
+
+-- task: coroutinen-server, der prefix-sums responded
+
+
+
 -- weirdThingy :: Members [Reader Int, Writer String, Yield Int Int] effs => Eff effs Int
 -- weirdThingy = do
 --   x <- ask @Int
 --   status <- interposeC $ do
 --     num <- yield (2 :: Int) show
---     tell num
-
+--     tell n
 --   case status of
 --     Continue a cont -> cont a
 --     Done r -> error "Fail!"
