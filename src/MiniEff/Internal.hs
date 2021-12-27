@@ -9,57 +9,6 @@ where
 import Control.Monad ((>=>))
 import Data.OpenUnion
 
--- data Free f a = Pure a | Impure (f (Free f a))
-
--- instance Functor f => Functor (Free f) where
---   fmap f (Pure a) = Pure (f a)
---   fmap f (Impure k) = Impure (fmap (fmap f) k)
-
--- instance Functor f => Applicative (Free f) where
---   pure = Pure
---   Pure a <*> xs = fmap a xs
---   Impure f <*> xs = Impure (fmap (<*> xs) f)
-
--- instance Functor f => Monad (Free f) where
---   Pure a >>= k = k a
---   Impure f >>= k = Impure (fmap (>>= k) f)
-
--- data FFree f a where
---   Pure :: a -> FFree f a
---   Impure :: f x -> (x -> FFree f a) -> FFree f a
-
--- data FReaderWriter i o x where
---   Get :: FReaderWriter i o i
---   Put :: o -> FReaderWriter i o ()
-
--- type IT i o a = FFree (FReaderWriter i o) a
-
--- instance Functor (FFree f) where
---   fmap f (Pure a) = Pure (f a)
---   fmap f (Impure g cont) = Impure g (fmap (fmap f) cont)
-
--- instance Applicative (FFree f) where
---   pure = Pure
---   Pure f <*> xs = fmap f xs
---   Impure g cont <*> xs = Impure g (fmap (<*> xs) cont)
-
--- instance Monad (FFree f) where
---   Pure x >>= k = k x
---   Impure fx k' >>= k = Impure fx (k' >=> k)
-
-data Lan (g :: * -> *) a where
-  FMap :: (x -> a) -> g x -> Lan g a
-
-instance Functor (Lan g) where
-  fmap h (FMap h' gx) = FMap (h . h') gx
-
--- type FFRee g = FFree (Lan g)
-
-data BiFree p a b where
-  Bimap :: (a -> b) -> (c -> d) -> p a c -> BiFree p b d
-
---
-
 data Eff r a where
   Pure :: a -> Eff r a
   Impure :: Union r x -> (x -> Eff r a) -> Eff r a
@@ -109,15 +58,16 @@ interpose ret h (Impure u k) =
     Nothing -> Impure u (interpose ret h . k)
 
 raise :: Eff r a -> Eff (e ': r) a
-raise = loop
-  where
-    loop (Pure x) = pure x
-    loop (Impure u q) = Impure (weaken u) (loop . q)
+raise (Pure x) = pure x
+raise (Impure u k) = Impure (weaken u) (raise . k)
 
-replace :: (a -> Eff (v : r) w) -> (forall x. t x -> (x -> Eff (v : r) w) -> Eff (v : r) w) -> Eff (t : r) a -> Eff (v : r) w
-replace pure' bind = loop
-  where
-    loop (Pure x) = pure' x
-    loop (Impure u' q) = case decomp u' of
-      Right x -> bind x (loop . q)
-      Left u -> Impure (weaken u) (loop . q)
+replace ::
+  (a -> Eff (v : r) w) ->
+  (forall x. t x -> (x -> Eff (v : r) w) -> Eff (v : r) w) ->
+  Eff (t : r) a ->
+  Eff (v : r) w
+replace ret _ (Pure x) = ret x
+replace ret h (Impure u' k) =
+  case decomp u' of
+    Right x -> h x (replace ret h . k)
+    Left u -> Impure (weaken u) (replace ret h . k)
