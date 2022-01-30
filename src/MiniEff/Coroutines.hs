@@ -58,3 +58,12 @@ runLocalExit2 (Handler f) (Impure u k) =
         Left c -> pure c
         Right (b, f1) -> runLocalExit2 f1 $ k b
       Left o -> Impure o (runLocalExit2 (Handler f) . k)
+
+runC2 :: (a -> Eff (Yield b a : effs) c)
+      -> Eff (Yield a b : effs) c
+      -> Eff effs c
+
+runC2 _ (Pure c) = Pure c
+runC2 f (Impure u k) = case decomp u of
+  Right (Yield a) -> runC2 k (f a)
+  Left o -> Impure o (runC2 f . k)

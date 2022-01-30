@@ -43,6 +43,7 @@ library
     MiniEff.Coroutines
     MiniEff.Internal
     MiniEff.Reader
+    MiniEff.State
     MiniEff.Writer
 
   -- Modules included in this library but not exported.
@@ -67,12 +68,12 @@ test-suite minieff-test
   ghc-options:      -fplugin=Polysemy.Plugin
   other-modules:
     FreerSimple
-    PolysemyTest
     MiniEffTest
+    PolysemyTest
 
   build-depends:
     , base             ^>=4.14.3.0
     , freer-simple
+    , minieff
     , polysemy
     , polysemy-plugin
-    , minieff

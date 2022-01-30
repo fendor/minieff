@@ -45,6 +45,21 @@ handleRelay ret h (Impure u k) =
     Right x -> h x (handleRelay ret h . k)
     Left o -> Impure o (handleRelay ret h . k)
 
+handleRelayS ::
+  -- | Initial state
+  s ->
+  -- | Base case
+  (s -> a -> Eff r b) ->
+  (forall v. s -> t v -> (s -> v -> Eff r b) -> Eff r b) ->
+  Eff (t : r) a ->
+  Eff r b
+handleRelayS s0 ret _ (Pure b) = ret s0 b
+handleRelayS s0 ret h (Impure u k) = case decomp u of
+  Right x -> h s0 x k'
+  Left o -> Impure o (k' s0)
+  where
+    k' s1 x = handleRelayS s1 ret h (k x)
+
 interpose ::
   Member t r =>
   (a -> Eff r b) ->
