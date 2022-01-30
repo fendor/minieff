@@ -1,5 +1,6 @@
 module MiniEffTest where
 
+import Control.Monad (forM_)
 import MiniEff
 
 double :: Member (Reader Int) r => Eff r Int
@@ -67,11 +68,7 @@ runWithYield = do
 
 --   pure status
 
-
-
 -- task: coroutinen-server, der prefix-sums responded
-
-
 
 -- weirdThingy :: Members [Reader Int, Writer String, Yield Int Int] effs => Eff effs Int
 -- weirdThingy = do
@@ -84,3 +81,43 @@ runWithYield = do
 --     Done r -> error "Fail!"
 
 --   pure x
+
+producer :: Members [Reader Int, Yield Int ()] effs => Eff effs ()
+producer =
+  forM_ [1 .. 100] (yield @Int @())
+
+consumer :: Members [Writer String, Writer Int, Reader Int, Yield () Int] effs => Int -> Eff effs ()
+consumer n = do
+  -- local @Int undefined $ tell @Int 1 -- = tell 1
+
+  x <- ask @Int
+  tell x
+  tell $
+    if n `mod` 3 == 0 && n `mod` 5 == 0
+      then "FizzBuzz"
+      else
+        if n `mod` 3 == 0
+          then "Fizz"
+          else
+            if n `mod` 5 == 0
+              then "Buzz"
+              else show n
+  yield () >>= consumer
+
+coroutine1 :: Members [Writer String, Reader Int, Yield Int String] effs => Eff effs ()
+coroutine1 = do
+  n <- ask @Int
+  s <- yield @Int @String n
+  tell s
+  _ <- yield @Int @String 5000
+  pure ()
+
+coroutine2 :: Members [Writer String, Yield String Int] effs => Int -> Eff effs ()
+coroutine2 n = do
+  n2 <- yield @String @Int (show $ 1000 * n)
+  tell $ show n2
+  _ <- yield @String @Int (show $ 10000 * n2)
+  pure ()
+
+runCoroutineExample :: ((), [String])
+runCoroutineExample = run $ runWriterList @String . runReader @Int 15 $ runC2 @Int @String coroutine2 coroutine1
